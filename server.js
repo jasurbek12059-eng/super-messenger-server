@@ -1,20 +1,21 @@
 const express = require("express");
 const admin = require("firebase-admin");
+const fs = require("fs");
 
 const app = express();
 
 app.use(express.json());
 
 const serviceAccount = JSON.parse(
-  process.env.FIREBASE_SERVICE_ACCOUNT
+  fs.readFileSync(
+    "/etc/secrets/firebase-service-account.json",
+    "utf8"
+  )
 );
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: process.env.FIREBASE_DATABASE_URL
+  credential: admin.credential.cert(serviceAccount)
 });
-
-const db = admin.database();
 
 app.get("/", (req, res) => {
   res.send("Super Messenger Server ishlayapti!");
@@ -31,16 +32,17 @@ app.post("/send-notification", async (req, res) => {
       });
     }
 
-    const tokenSnapshot = await db
+    const snapshot = await admin
+      .database()
       .ref("users/" + receiverUid + "/fcmToken")
       .once("value");
 
-    const token = tokenSnapshot.val();
+    const token = snapshot.val();
 
     if (!token) {
       return res.json({
         success: false,
-        error: "Foydalanuvchining FCM tokeni topilmadi"
+        error: "FCM token topilmadi"
       });
     }
 
@@ -49,15 +51,10 @@ app.post("/send-notification", async (req, res) => {
       notification: {
         title: senderName || "Super Messenger",
         body: message
-      },
-      data: {
-        receiverUid: receiverUid
       }
     });
 
-    res.json({
-      success: true
-    });
+    res.json({ success: true });
 
   } catch (error) {
     console.error(error);
