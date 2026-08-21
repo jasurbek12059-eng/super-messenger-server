@@ -24,6 +24,9 @@ app.get("/", (req, res) => {
 
 app.post("/send-notification", async (req, res) => {
   try {
+
+    console.log("=== NOTIFICATION REQUEST ===");
+
     const {
       receiverUid,
       message,
@@ -31,7 +34,15 @@ app.post("/send-notification", async (req, res) => {
       senderUid
     } = req.body;
 
+    console.log("receiverUid:", receiverUid);
+    console.log("senderUid:", senderUid);
+    console.log("senderName:", senderName);
+    console.log("message:", message);
+
     if (!receiverUid || !message || !senderUid) {
+
+      console.log("XATO: kerakli ma'lumot yetishmayapti");
+
       return res.status(400).json({
         success: false,
         error: "receiverUid, message va senderUid kerak"
@@ -45,35 +56,67 @@ app.post("/send-notification", async (req, res) => {
 
     const token = snapshot.val();
 
+    console.log(
+      "FCM token topildi:",
+      token ? "HA" : "YO'Q"
+    );
+
     if (!token) {
+
+      console.log(
+        "XATO: FCM token topilmadi"
+      );
+
       return res.json({
         success: false,
         error: "FCM token topilmadi"
       });
     }
 
-    await admin.messaging().send({
-      token: token,
+    const response =
+      await admin.messaging().send({
 
-      notification: {
-        title: senderName || "Super Messenger",
-        body: message
-      },
+        token: token,
 
-      data: {
-        senderUid: String(senderUid),
-        senderName: String(senderName || ""),
-        message: String(message)
-      }
-    });
+        notification: {
+          title:
+            senderName ||
+            "Super Messenger",
+
+          body: message
+        },
+
+        data: {
+          senderUid:
+            String(senderUid),
+
+          senderName:
+            String(senderName || ""),
+
+          message:
+            String(message)
+        }
+      });
+
+    console.log(
+      "FCM muvaffaqiyatli yuborildi:",
+      response
+    );
 
     res.json({
-      success: true
+      success: true,
+      messageId: response
     });
 
   } catch (error) {
 
-    console.error("Notification xatosi:", error);
+    console.error(
+      "=== NOTIFICATION XATOSI ==="
+    );
+
+    console.error(
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -82,8 +125,13 @@ app.post("/send-notification", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT =
+  process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server ${PORT} portda ishga tushdi`);
+
+  console.log(
+    `Server ${PORT} portda ishga tushdi`
+  );
+
 });
