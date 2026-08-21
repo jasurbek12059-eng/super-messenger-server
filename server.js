@@ -24,12 +24,17 @@ app.get("/", (req, res) => {
 
 app.post("/send-notification", async (req, res) => {
   try {
-    const { receiverUid, message, senderName } = req.body;
+    const {
+      receiverUid,
+      message,
+      senderName,
+      senderUid
+    } = req.body;
 
-    if (!receiverUid || !message) {
+    if (!receiverUid || !message || !senderUid) {
       return res.status(400).json({
         success: false,
-        error: "receiverUid va message kerak"
+        error: "receiverUid, message va senderUid kerak"
       });
     }
 
@@ -49,9 +54,16 @@ app.post("/send-notification", async (req, res) => {
 
     await admin.messaging().send({
       token: token,
+
       notification: {
         title: senderName || "Super Messenger",
         body: message
+      },
+
+      data: {
+        senderUid: String(senderUid),
+        senderName: String(senderName || ""),
+        message: String(message)
       }
     });
 
@@ -60,6 +72,7 @@ app.post("/send-notification", async (req, res) => {
     });
 
   } catch (error) {
+
     console.error("Notification xatosi:", error);
 
     res.status(500).json({
