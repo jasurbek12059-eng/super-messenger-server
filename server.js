@@ -23,9 +23,8 @@ app.get("/", (req, res) => {
 });
 
 app.post("/send-notification", async (req, res) => {
-  try {
 
-    console.log("=== NOTIFICATION REQUEST ===");
+  try {
 
     const {
       receiverUid,
@@ -34,87 +33,140 @@ app.post("/send-notification", async (req, res) => {
       senderUid
     } = req.body;
 
-    console.log("receiverUid:", receiverUid);
-    console.log("senderUid:", senderUid);
-    console.log("senderName:", senderName);
-    console.log("message:", message);
+    console.log("=== NOTIFICATION REQUEST ===");
 
-    if (!receiverUid || !message || !senderUid) {
+    console.log(
+      "receiverUid:",
+      receiverUid
+    );
 
-      console.log("XATO: kerakli ma'lumot yetishmayapti");
+    console.log(
+      "senderUid:",
+      senderUid
+    );
+
+    console.log(
+      "senderName:",
+      senderName
+    );
+
+    console.log(
+      "message:",
+      message
+    );
+
+    if (
+      !receiverUid ||
+      !message ||
+      !senderUid
+    ) {
 
       return res.status(400).json({
         success: false,
-        error: "receiverUid, message va senderUid kerak"
+        error:
+          "receiverUid, message va senderUid kerak"
       });
     }
 
-    const snapshot = await admin
-      .database()
-      .ref("users/" + receiverUid + "/fcmToken")
-      .once("value");
+    const snapshot =
+      await admin
+        .database()
+        .ref(
+          "users/" +
+          receiverUid +
+          "/fcmToken"
+        )
+        .once("value");
 
-    const token = snapshot.val();
-
-    console.log(
-      "FCM token topildi:",
-      token ? "HA" : "YO'Q"
-    );
+    const token =
+      snapshot.val();
 
     if (!token) {
 
       console.log(
-        "XATO: FCM token topilmadi"
+        "FCM token topilmadi"
       );
 
       return res.json({
         success: false,
-        error: "FCM token topilmadi"
+        error:
+          "FCM token topilmadi"
       });
     }
 
-    const response =
-      await admin.messaging().send({
-
-        token: token,
-
-        notification: {
-          title:
-            senderName ||
-            "Super Messenger",
-
-          body: message
-        },
-
-        data: {
-          senderUid:
-            String(senderUid),
-
-          senderName:
-            String(senderName || ""),
-
-          message:
-            String(message)
-        }
-      });
-
     console.log(
-      "FCM muvaffaqiyatli yuborildi:",
-      response
+      "FCM token topildi:",
+      token.substring(0, 10)
     );
 
-    res.json({
-      success: true,
-      messageId: response
-    });
+    /*
+     * DIQQAT:
+     *
+     * Bu yerda notification:
+     * { title, body }
+     * YUBORILMAYDI.
+     *
+     * Faqat DATA yuboriladi.
+     *
+     * Shunda Androiddagi
+     * MyFirebaseMessagingService
+     * notificationni o'zi yaratadi.
+     */
+
+    const messageData = {
+      token: token,
+
+      data: {
+        senderUid:
+          String(senderUid),
+
+        senderName:
+          String(
+            senderName ||
+            "Super Messenger"
+          ),
+
+        message:
+          String(message)
+      },
+
+      android: {
+        priority: "high"
+      }
+    };    try {
+
+      const response =
+        await admin.messaging().send(
+          messageData
+        );
+
+      console.log(
+        "FCM muvaffaqiyatli yuborildi:",
+        response
+      );
+
+      res.json({
+        success: true,
+        messageId: response
+      });
+
+    } catch (sendError) {
+
+      console.error(
+        "FCM yuborish xatosi:",
+        sendError
+      );
+
+      res.status(500).json({
+        success: false,
+        error: sendError.message
+      });
+    }
 
   } catch (error) {
 
     console.error(
-      "=== NOTIFICATION XATOSI ==="
-    );
-
-    console.error(
+      "Notification xatosi:",
       error
     );
 
@@ -128,10 +180,13 @@ app.post("/send-notification", async (req, res) => {
 const PORT =
   process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+app.listen(
+  PORT,
+  () => {
 
-  console.log(
-    `Server ${PORT} portda ishga tushdi`
-  );
+    console.log(
+      `Server ${PORT} portda ishga tushdi`
+    );
 
-});
+  }
+);
