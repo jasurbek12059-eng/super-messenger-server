@@ -14,7 +14,8 @@ const serviceAccount = JSON.parse(
 );
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: process.env.FIREBASE_DATABASE_URL
 });
 
 app.get("/", (req, res) => {
@@ -54,10 +55,12 @@ app.post("/send-notification", async (req, res) => {
       }
     });
 
-    res.json({ success: true });
+    res.json({
+      success: true
+    });
 
   } catch (error) {
-    console.error(error);
+    console.error("Notification xatosi:", error);
 
     res.status(500).json({
       success: false,
