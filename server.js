@@ -50,13 +50,6 @@ app.post("/send-notification", async (req, res) => {
       senderUid
     } = req.body;
 
-    console.log("=== NOTIFICATION REQUEST ===");
-
-    console.log("receiverUid:", receiverUid);
-    console.log("senderUid:", senderUid);
-    console.log("senderName:", senderName);
-    console.log("message:", message);
-
     if (
       !receiverUid ||
       !message ||
@@ -86,10 +79,6 @@ app.post("/send-notification", async (req, res) => {
 
     if (!token) {
 
-      console.log(
-        "FCM token topilmadi"
-      );
-
       return res.json({
         success: false,
         error:
@@ -97,11 +86,6 @@ app.post("/send-notification", async (req, res) => {
       });
 
     }
-
-    console.log(
-      "FCM token topildi:",
-      token.substring(0, 10)
-    );
 
     const messageData = {
 
@@ -129,44 +113,19 @@ app.post("/send-notification", async (req, res) => {
 
     };
 
-    try {
+    const response =
+      await admin
+        .messaging()
+        .send(messageData);
 
-      const response =
-        await admin
-          .messaging()
-          .send(messageData);
+    res.json({
 
-      console.log(
-        "FCM muvaffaqiyatli yuborildi:",
+      success: true,
+
+      messageId:
         response
-      );
 
-      res.json({
-
-        success: true,
-
-        messageId:
-          response
-
-      });
-
-    } catch (sendError) {
-
-      console.error(
-        "FCM yuborish xatosi:",
-        sendError
-      );
-
-      res.status(500).json({
-
-        success: false,
-
-        error:
-          sendError.message
-
-      });
-
-    }
+    });
 
   } catch (error) {
 
@@ -212,18 +171,6 @@ app.post("/trading-signal", async (req, res) => {
       support,
       resistance
     } = req.body;
-
-    console.log(
-      "=== TRADING AI SIGNAL ==="
-    );
-
-    console.log("symbol:", symbol);
-    console.log("timeframe:", timeframe);
-    console.log("signal:", signal);
-    console.log("entry:", entry);
-    console.log("stopLoss:", stopLoss);
-    console.log("takeProfit:", takeProfit);
-    console.log("strength:", strength);
 
     if (
       !symbol ||
@@ -295,11 +242,6 @@ app.post("/trading-signal", async (req, res) => {
         .ref("tradingSignals")
         .push(signalData);
 
-    console.log(
-      "Trading signal saqlandi:",
-      newSignal.key
-    );
-
     res.json({
 
       success: true,
@@ -334,7 +276,7 @@ app.post("/trading-signal", async (req, res) => {
 
 
 // =====================================
-// FUNDAMENTAL ANALYSIS
+// FUNDAMENTAL ENGINE
 // =====================================
 
 let latestFundamentalData = {
@@ -363,7 +305,7 @@ let latestFundamentalData = {
 
 
 // =====================================
-// CALCULATE GOLD IMPACT
+// FUNDAMENTAL EVENT ANALYSIS
 // =====================================
 
 function calculateGoldImpact(event) {
@@ -400,9 +342,7 @@ function calculateGoldImpact(event) {
     actual - forecast;
 
 
-  // ===================================
-  // CPI / INFLATION / PCE
-  // ===================================
+  // CPI / PCE / INFLATION
 
   if (
     name.includes("cpi") ||
@@ -413,13 +353,10 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-
         bias:
           "BULLISH",
-
         score:
           3
-
       };
 
     }
@@ -427,13 +364,10 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-
         bias:
           "BEARISH",
-
         score:
           -3
-
       };
 
     }
@@ -441,9 +375,7 @@ function calculateGoldImpact(event) {
   }
 
 
-  // ===================================
   // NFP / EMPLOYMENT
-  // ===================================
 
   if (
     name.includes("nfp") ||
@@ -455,13 +387,10 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-
         bias:
           "BULLISH",
-
         score:
           3
-
       };
 
     }
@@ -469,13 +398,10 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-
         bias:
           "BEARISH",
-
         score:
           -3
-
       };
 
     }
@@ -483,9 +409,7 @@ function calculateGoldImpact(event) {
   }
 
 
-  // ===================================
   // UNEMPLOYMENT
-  // ===================================
 
   if (
     name.includes("unemployment")
@@ -494,13 +418,10 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-
         bias:
           "BULLISH",
-
         score:
           2
-
       };
 
     }
@@ -508,13 +429,10 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-
         bias:
           "BEARISH",
-
         score:
           -2
-
       };
 
     }
@@ -522,9 +440,7 @@ function calculateGoldImpact(event) {
   }
 
 
-  // ===================================
   // GDP
-  // ===================================
 
   if (
     name.includes("gdp")
@@ -533,13 +449,10 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-
         bias:
           "BULLISH",
-
         score:
           2
-
       };
 
     }
@@ -547,54 +460,10 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-
         bias:
           "BEARISH",
-
         score:
           -2
-
-      };
-
-    }
-
-  }
-
-
-  // ===================================
-  // JOBLESS CLAIMS
-  // ===================================
-
-  if (
-    name.includes("jobless") ||
-    name.includes("initial claims") ||
-    name.includes("unemployment claims")
-  ) {
-
-    if (difference > 0) {
-
-      return {
-
-        bias:
-          "BULLISH",
-
-        score:
-          2
-
-      };
-
-    }
-
-    if (difference < 0) {
-
-      return {
-
-        bias:
-          "BEARISH",
-
-        score:
-          -2
-
       };
 
     }
@@ -616,7 +485,7 @@ function calculateGoldImpact(event) {
 
 
 // =====================================
-// FUNDAMENTAL ENGINE
+// FUNDAMENTAL ANALYSIS
 // =====================================
 
 function analyzeFundamentals(events) {
@@ -744,53 +613,32 @@ function analyzeFundamentals(events) {
 
 
 // =====================================
-// GET FUNDAMENTAL DATA
+// GET FUNDAMENTAL
 // =====================================
 
 app.get(
   "/fundamental",
   (req, res) => {
 
-    try {
+    res.json({
 
-      res.json({
+      success:
+        true,
 
-        success:
-          true,
+      source:
+        "Fundamental Engine",
 
-        source:
-          "Investing.com",
+      data:
+        latestFundamentalData
 
-        data:
-          latestFundamentalData
-
-      });
-
-    } catch (error) {
-
-      console.error(
-        "Fundamental GET xatosi:",
-        error
-      );
-
-      res.status(500).json({
-
-        success:
-          false,
-
-        error:
-          error.message
-
-      });
-
-    }
+    });
 
   }
 );
 
 
 // =====================================
-// UPDATE FUNDAMENTAL DATA
+// UPDATE FUNDAMENTAL
 // =====================================
 
 app.post(
@@ -827,41 +675,6 @@ app.post(
         );
 
 
-      console.log(
-        "=== FUNDAMENTAL ENGINE ==="
-      );
-
-      console.log(
-        "Events:",
-        latestFundamentalData.events.length
-      );
-
-      console.log(
-        "Gold Bias:",
-        latestFundamentalData.goldBias
-      );
-
-      console.log(
-        "Strength:",
-        latestFundamentalData.strength
-      );
-
-      console.log(
-        "Bullish:",
-        latestFundamentalData.bullishCount
-      );
-
-      console.log(
-        "Bearish:",
-        latestFundamentalData.bearishCount
-      );
-
-      console.log(
-        "Score:",
-        latestFundamentalData.score
-      );
-
-
       res.json({
 
         success:
@@ -877,10 +690,348 @@ app.post(
 
     } catch (error) {
 
+      res.status(500).json({
+
+        success:
+          false,
+
+        error:
+          error.message
+
+      });
+
+    }
+
+  }
+);
+
+
+// =====================================
+// BLS DATA FUNCTION
+// =====================================
+
+async function getBLSData(seriesId) {
+
+  const url =
+    "https://api.bls.gov/publicAPI/v2/timeseries/data/" +
+    seriesId +
+    "?startyear=2025&endyear=2026";
+
+
+  const response =
+    await fetch(url);
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      "BLS HTTP error: " +
+      response.status
+    );
+
+  }
+
+
+  const data =
+    await response.json();
+
+
+  if (
+    data.status !==
+    "REQUEST_SUCCEEDED"
+  ) {
+
+    throw new Error(
+      "BLS request failed"
+    );
+
+  }
+
+
+  return data.Results.series[0].data;
+
+}
+
+
+// =====================================
+// CPI YEARLY
+// =====================================
+
+function calculateCPIYearly(data) {
+
+  if (
+    !Array.isArray(data) ||
+    data.length < 2
+  ) {
+
+    return null;
+
+  }
+
+
+  const current =
+    Number(data[0].value);
+
+  const currentYear =
+    Number(data[0].year);
+
+  const currentPeriod =
+    data[0].period;
+
+
+  const previous =
+    data.find(item =>
+      Number(item.year) ===
+        currentYear - 1 &&
+      item.period ===
+        currentPeriod
+    );
+
+
+  if (!previous) {
+
+    return null;
+
+  }
+
+
+  const previousValue =
+    Number(previous.value);
+
+
+  if (
+    !Number.isFinite(current) ||
+    !Number.isFinite(previousValue) ||
+    previousValue === 0
+  ) {
+
+    return null;
+
+  }
+
+
+  return (
+    (current - previousValue) /
+    previousValue
+  ) * 100;
+
+}
+
+
+// =====================================
+// REAL FUNDAMENTAL
+// CPI + UNEMPLOYMENT + NFP
+// =====================================
+
+app.get(
+  "/fundamental/real",
+  async (req, res) => {
+
+    try {
+
+      console.log(
+        "=== REAL FUNDAMENTAL DATA ==="
+      );
+
+
+      // =================================
+      // CPI
+      // =================================
+
+      const cpiData =
+        await getBLSData(
+          "CUUR0000SA0"
+        );
+
+
+      const cpi =
+        calculateCPIYearly(
+          cpiData
+        );
+
+
+      // =================================
+      // UNEMPLOYMENT
+      // =================================
+
+      const unemploymentData =
+        await getBLSData(
+          "LNS14000000"
+        );
+
+
+      const latestUnemployment =
+        unemploymentData?.[0];
+
+
+      const unemployment =
+        latestUnemployment
+          ? Number(
+              latestUnemployment.value
+            )
+          : null;
+
+
+      // =================================
+      // NFP
+      // =================================
+
+      const nfpData =
+        await getBLSData(
+          "CES0000000001"
+        );
+
+
+      const latestNFP =
+        nfpData?.[0];
+
+      const previousNFP =
+        nfpData?.[1];
+
+
+      const currentPayroll =
+        latestNFP
+          ? Number(
+              latestNFP.value
+            )
+          : null;
+
+
+      const previousPayroll =
+        previousNFP
+          ? Number(
+              previousNFP.value
+            )
+          : null;
+
+
+      let nfpChange =
+        null;
+
+
+      if (
+        Number.isFinite(
+          currentPayroll
+        ) &&
+        Number.isFinite(
+          previousPayroll
+        )
+      ) {
+
+        nfpChange =
+          currentPayroll -
+          previousPayroll;
+
+      }
+
+
+      // =================================
+      // RESULT
+      // =================================
+
+      const result = {
+
+        source:
+          "BLS",
+
+        CPI: {
+
+          value:
+            cpi,
+
+          index:
+            Number(
+              cpiData?.[0]?.value
+            ),
+
+          year:
+            cpiData?.[0]?.year,
+
+          period:
+            cpiData?.[0]?.periodName
+
+        },
+
+
+        unemployment: {
+
+          value:
+            unemployment,
+
+          year:
+            latestUnemployment?.year,
+
+          period:
+            latestUnemployment?.periodName
+
+        },
+
+
+        NFP: {
+
+          employment:
+            currentPayroll,
+
+          previousEmployment:
+            previousPayroll,
+
+          change:
+            nfpChange,
+
+          year:
+            latestNFP?.year,
+
+          period:
+            latestNFP?.periodName
+
+        },
+
+
+        timestamp:
+          Date.now()
+
+      };
+
+
+      console.log(
+        "CPI:",
+        result.CPI.value
+      );
+
+      console.log(
+        "Unemployment:",
+        result.unemployment.value
+      );
+
+      console.log(
+        "NFP:",
+        result.NFP.employment
+      );
+
+      console.log(
+        "NFP change:",
+        result.NFP.change
+      );
+
+
+      res.json({
+
+        success:
+          true,
+
+        data:
+          result
+
+      });
+
+
+    } catch (error) {
+
       console.error(
-        "Fundamental update xatosi:",
+        "Real fundamental xatosi:",
         error
       );
+
 
       res.status(500).json({
 
@@ -948,262 +1099,6 @@ app.get(
         error
       );
 
-      res.status(500).json({
-
-        success:
-          false,
-
-        error:
-          error.message
-
-      });
-
-    }
-
-  }
-);
-
-
-// =====================================
-// BLS DATA FUNCTION
-// =====================================
-
-async function getBLSData(seriesId) {
-
-  const url =
-    "https://api.bls.gov/publicAPI/v2/timeseries/data/" +
-    seriesId +
-    "?startyear=2025&endyear=2026";
-
-
-  const response =
-    await fetch(url);
-
-
-  if (!response.ok) {
-
-    throw new Error(
-      "BLS HTTP error: " +
-      response.status
-    );
-
-  }
-
-
-  const data =
-    await response.json();
-
-
-  if (
-    data.status !==
-    "REQUEST_SUCCEEDED"
-  ) {
-
-    throw new Error(
-      "BLS request failed"
-    );
-
-  }
-
-
-  return data.Results.series[0].data;
-
-}
-
-
-// =====================================
-// CALCULATE CPI YEARLY
-// =====================================
-
-function calculateCPIYearly(data) {
-
-  if (
-    !Array.isArray(data) ||
-    data.length < 2
-  ) {
-
-    return null;
-
-  }
-
-
-  const current =
-    Number(data[0].value);
-
-  const currentYear =
-    Number(data[0].year);
-
-  const currentPeriod =
-    data[0].period;
-
-
-  const previous =
-    data.find(item =>
-      Number(item.year) ===
-        currentYear - 1 &&
-      item.period ===
-        currentPeriod
-    );
-
-
-  if (!previous) {
-
-    return null;
-
-  }
-
-
-  const previousValue =
-    Number(previous.value);
-
-
-  if (
-    !Number.isFinite(current) ||
-    !Number.isFinite(previousValue) ||
-    previousValue === 0
-  ) {
-
-    return null;
-
-  }
-
-
-  return (
-    (current - previousValue) /
-    previousValue
-  ) * 100;
-
-}
-
-
-// =====================================
-// REAL FUNDAMENTAL DATA
-// =====================================
-
-app.get(
-  "/fundamental/real",
-  async (req, res) => {
-
-    try {
-
-      console.log(
-        "=== REAL FUNDAMENTAL DATA ==="
-      );
-
-
-      // ===============================
-      // CPI
-      // ===============================
-
-      const cpiData =
-        await getBLSData(
-          "CUUR0000SA0"
-        );
-
-
-      const cpi =
-        calculateCPIYearly(
-          cpiData
-        );
-
-
-      // ===============================
-      // UNEMPLOYMENT
-      // ===============================
-
-      const unemploymentData =
-        await getBLSData(
-          "LNS14000000"
-        );
-
-
-      const latestUnemployment =
-        unemploymentData?.[0];
-
-
-      const unemployment =
-        latestUnemployment
-          ? Number(
-              latestUnemployment.value
-            )
-          : null;
-
-
-      // ===============================
-      // RESULT
-      // ===============================
-
-      const result = {
-
-        source:
-          "BLS",
-
-        CPI: {
-
-          value:
-            cpi,
-
-          index:
-            Number(
-              cpiData?.[0]?.value
-            ),
-
-          year:
-            cpiData?.[0]?.year,
-
-          period:
-            cpiData?.[0]?.periodName
-
-        },
-
-        unemployment: {
-
-          value:
-            unemployment,
-
-          year:
-            latestUnemployment?.year,
-
-          period:
-            latestUnemployment?.periodName
-
-        },
-
-        timestamp:
-          Date.now()
-
-      };
-
-
-      console.log(
-        "CPI:",
-        result.CPI.value
-      );
-
-      console.log(
-        "Unemployment:",
-        result.unemployment.value
-      );
-
-
-      res.json({
-
-        success:
-          true,
-
-        data:
-          result
-
-      });
-
-
-    } catch (error) {
-
-      console.error(
-        "Real fundamental xatosi:",
-        error
-      );
-
 
       res.status(500).json({
 
@@ -1222,7 +1117,7 @@ app.get(
 
 
 // =====================================
-// MT5 CANDLE DATA
+// MT5 CANDLES
 // =====================================
 
 let latestMT5Data = null;
@@ -1239,26 +1134,6 @@ app.post(
         timeframe,
         candles
       } = req.body;
-
-
-      console.log(
-        "=== MT5 CANDLE DATA ==="
-      );
-
-      console.log(
-        "symbol:",
-        symbol
-      );
-
-      console.log(
-        "timeframe:",
-        timeframe
-      );
-
-      console.log(
-        "candles:",
-        candles?.length
-      );
 
 
       if (
@@ -1317,6 +1192,7 @@ app.post(
         error
       );
 
+
       res.status(500).json({
 
         success:
@@ -1334,7 +1210,7 @@ app.post(
 
 
 // =====================================
-// GET LAST MT5 DATA
+// GET MT5
 // =====================================
 
 app.get(
