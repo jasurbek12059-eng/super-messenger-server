@@ -29,9 +29,7 @@ admin.initializeApp({
 // =====================================
 
 app.get("/", (req, res) => {
-
   res.send("TradingAI Server ishlayapti!");
-
 });
 
 
@@ -316,7 +314,7 @@ let latestFundamentalData = {
 
 
 // =====================================
-// FUNDAMENTAL EVENT ANALYSIS
+// FUNDAMENTAL EVENT IMPACT
 // =====================================
 
 function calculateGoldImpact(event) {
@@ -714,11 +712,8 @@ app.post(
     }
 
   }
-);
-
-
-// =====================================
-// BLS POST DATA
+);// =====================================
+// BLS MULTIPLE DATA
 // =====================================
 
 async function getBLSMultipleData() {
@@ -727,41 +722,26 @@ async function getBLSMultipleData() {
     await fetch(
       "https://api.bls.gov/publicAPI/v2/timeseries/data/",
       {
-
-        method:
-          "POST",
+        method: "POST",
 
         headers: {
-
-          "Content-Type":
-            "application/json"
-
+          "Content-Type": "application/json"
         },
 
-        body:
-          JSON.stringify({
+        body: JSON.stringify({
 
-            seriesid: [
+          seriesid: [
+            "CUUR0000SA0",
+            "LNS14000000",
+            "CES0000000001"
+          ],
 
-              "CUUR0000SA0",
+          startyear: "2025",
+          endyear: "2026"
 
-              "LNS14000000",
-
-              "CES0000000001"
-
-            ],
-
-            startyear:
-              "2025",
-
-            endyear:
-              "2026"
-
-          })
-
-        }
-
-      );
+        })
+      }
+    );
 
 
   if (!response.ok) {
@@ -781,11 +761,6 @@ async function getBLSMultipleData() {
   console.log(
     "BLS status:",
     data.status
-  );
-
-  console.log(
-    "BLS message:",
-    data.message
   );
 
 
@@ -820,8 +795,7 @@ function findBLSSeries(
 
   return series.find(
     item =>
-      item.seriesID ===
-      seriesId
+      item.seriesID === seriesId
   );
 
 }
@@ -844,14 +818,12 @@ function calculateCPIYearly(data) {
 
 
   const current =
-    Number(
-      data[0].value
-    );
+    Number(data[0].value);
+
 
   const currentYear =
-    Number(
-      data[0].year
-    );
+    Number(data[0].year);
+
 
   const currentPeriod =
     data[0].period;
@@ -874,9 +846,7 @@ function calculateCPIYearly(data) {
 
 
   const previousValue =
-    Number(
-      previous.value
-    );
+    Number(previous.value);
 
 
   if (
@@ -900,7 +870,6 @@ function calculateCPIYearly(data) {
 
 // =====================================
 // REAL FUNDAMENTAL
-// CPI + UNEMPLOYMENT + NFP
 // =====================================
 
 app.get(
@@ -918,9 +887,9 @@ app.get(
         await getBLSMultipleData();
 
 
-      // =================================
+      // ================================
       // CPI
-      // =================================
+      // ================================
 
       const cpiSeries =
         findBLSSeries(
@@ -939,9 +908,9 @@ app.get(
         );
 
 
-      // =================================
+      // ================================
       // UNEMPLOYMENT
-      // =================================
+      // ================================
 
       const unemploymentSeries =
         findBLSSeries(
@@ -966,9 +935,9 @@ app.get(
           : null;
 
 
-      // =================================
+      // ================================
       // NFP
-      // =================================
+      // ================================
 
       const nfpSeries =
         findBLSSeries(
@@ -1025,14 +994,15 @@ app.get(
       }
 
 
-      // =================================
+      // ================================
       // RESULT
-      // =================================
+      // ================================
 
       const result = {
 
         source:
           "BLS",
+
 
         CPI: {
 
@@ -1098,20 +1068,18 @@ app.get(
         result.CPI.value
       );
 
+
       console.log(
         "Unemployment:",
         result.unemployment.value
       );
 
+
       console.log(
-        "NFP employment:",
+        "NFP:",
         result.NFP.employment
       );
 
-      console.log(
-        "NFP previous:",
-        result.NFP.previousEmployment
-      );
 
       console.log(
         "NFP change:",
@@ -1155,33 +1123,246 @@ app.get(
 
 
 // =====================================
-// BLS TEST
+// FINAL TRADING AI
+// TECHNICAL + FUNDAMENTAL
 // =====================================
 
-app.get(
-  "/fundamental/bls-test",
-  async (req, res) => {
+app.post(
+  "/trading-ai/final",
+  (req, res) => {
 
     try {
 
-      const response =
-        await fetch(
-          "https://api.bls.gov/publicAPI/v2/timeseries/data/CUUR0000SA0?latest=true"
+      const {
+
+        technicalSignal,
+
+        technicalStrength,
+
+        fundamentalBias,
+
+        fundamentalStrength,
+
+        entry,
+
+        support,
+
+        resistance
+
+      } = req.body;
+
+
+      const tech =
+        String(
+          technicalSignal ||
+          "WAIT"
+        ).toUpperCase();
+
+
+      const fund =
+        String(
+          fundamentalBias ||
+          "NEUTRAL"
+        ).toUpperCase();
+
+
+      const techStrength =
+        Number(
+          technicalStrength || 0
         );
 
 
-      if (!response.ok) {
-
-        throw new Error(
-          "BLS API HTTP xatosi: " +
-          response.status
+      const fundStrength =
+        Number(
+          fundamentalStrength || 0
         );
+
+
+      // ================================
+      // SCORE
+      // ================================
+
+      let score = 0;
+
+
+      if (
+        tech === "BUY"
+      ) {
+
+        score +=
+          techStrength;
 
       }
 
 
-      const data =
-        await response.json();
+      if (
+        tech === "SELL"
+      ) {
+
+        score -=
+          techStrength;
+
+      }
+
+
+      if (
+        fund === "BULLISH"
+      ) {
+
+        score +=
+          fundStrength;
+
+      }
+
+
+      if (
+        fund === "BEARISH"
+      ) {
+
+        score -=
+          fundStrength;
+
+      }
+
+
+      // ================================
+      // STRENGTH
+      // ================================
+
+      const totalStrength =
+        Math.round(
+          Math.min(
+            100,
+            Math.abs(score) / 2
+          )
+        );
+
+
+      // ================================
+      // FINAL SIGNAL
+      // ================================
+
+      let finalSignal =
+        "WAIT";
+
+
+      if (
+        score >= 30
+      ) {
+
+        finalSignal =
+          "BUY";
+
+      }
+
+
+      if (
+        score <= -30
+      ) {
+
+        finalSignal =
+          "SELL";
+
+      }
+
+
+      // ================================
+      // CONFLICT PROTECTION
+      // ================================
+
+      if (
+        tech === "BUY" &&
+        fund === "BEARISH"
+      ) {
+
+        finalSignal =
+          "WAIT";
+
+      }
+
+
+      if (
+        tech === "SELL" &&
+        fund === "BULLISH"
+      ) {
+
+        finalSignal =
+          "WAIT";
+
+      }
+
+
+      // ================================
+      // RESULT
+      // ================================
+
+      const result = {
+
+        signal:
+          finalSignal,
+
+        strength:
+          totalStrength,
+
+
+        technical: {
+
+          signal:
+            tech,
+
+          strength:
+            techStrength
+
+        },
+
+
+        fundamental: {
+
+          bias:
+            fund,
+
+          strength:
+            fundStrength
+
+        },
+
+
+        entry:
+          Number(
+            entry || 0
+          ),
+
+
+        support:
+          Number(
+            support || 0
+          ),
+
+
+        resistance:
+          Number(
+            resistance || 0
+          ),
+
+
+        timestamp:
+          Date.now()
+
+      };
+
+
+      console.log(
+        "=== FINAL TRADING AI ==="
+      );
+
+
+      console.log(
+        JSON.stringify(
+          result,
+          null,
+          2
+        )
+      );
 
 
       res.json({
@@ -1189,18 +1370,16 @@ app.get(
         success:
           true,
 
-        source:
-          "BLS",
-
         data:
-          data
+          result
 
       });
+
 
     } catch (error) {
 
       console.error(
-        "BLS API xatosi:",
+        "Final TradingAI xatosi:",
         error
       );
 
@@ -1239,11 +1418,6 @@ app.post(
         timeframe,
         candles
       } = req.body;
-
-
-      console.log(
-        "=== MT5 CANDLE DATA ==="
-      );
 
 
       if (
