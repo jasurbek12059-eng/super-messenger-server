@@ -29,9 +29,7 @@ admin.initializeApp({
 // =====================================
 
 app.get("/", (req, res) => {
-
   res.send("TradingAI Server ishlayapti!");
-
 });
 
 
@@ -51,7 +49,6 @@ app.post("/send-notification", async (req, res) => {
     } = req.body;
 
     console.log("=== NOTIFICATION REQUEST ===");
-
     console.log("receiverUid:", receiverUid);
     console.log("senderUid:", senderUid);
     console.log("senderName:", senderName);
@@ -81,8 +78,7 @@ app.post("/send-notification", async (req, res) => {
         )
         .once("value");
 
-    const token =
-      snapshot.val();
+    const token = snapshot.val();
 
     if (!token) {
 
@@ -217,40 +213,13 @@ app.post("/trading-signal", async (req, res) => {
       "=== TRADING AI SIGNAL ==="
     );
 
-    console.log(
-      "symbol:",
-      symbol
-    );
-
-    console.log(
-      "timeframe:",
-      timeframe
-    );
-
-    console.log(
-      "signal:",
-      signal
-    );
-
-    console.log(
-      "entry:",
-      entry
-    );
-
-    console.log(
-      "stopLoss:",
-      stopLoss
-    );
-
-    console.log(
-      "takeProfit:",
-      takeProfit
-    );
-
-    console.log(
-      "strength:",
-      strength
-    );
+    console.log("symbol:", symbol);
+    console.log("timeframe:", timeframe);
+    console.log("signal:", signal);
+    console.log("entry:", entry);
+    console.log("stopLoss:", stopLoss);
+    console.log("takeProfit:", takeProfit);
+    console.log("strength:", strength);
 
     if (
       !symbol ||
@@ -406,7 +375,6 @@ function calculateGoldImpact(event) {
   const forecast =
     Number(event.forecast);
 
-
   if (
     !Number.isFinite(actual) ||
     !Number.isFinite(forecast)
@@ -423,7 +391,6 @@ function calculateGoldImpact(event) {
     };
 
   }
-
 
   const difference =
     actual - forecast;
@@ -442,13 +409,8 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-
-        bias:
-          "BULLISH",
-
-        score:
-          3
-
+        bias: "BULLISH",
+        score: 3
       };
 
     }
@@ -456,13 +418,8 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-
-        bias:
-          "BEARISH",
-
-        score:
-          -3
-
+        bias: "BEARISH",
+        score: -3
       };
 
     }
@@ -484,13 +441,8 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-
-        bias:
-          "BULLISH",
-
-        score:
-          3
-
+        bias: "BULLISH",
+        score: 3
       };
 
     }
@@ -498,13 +450,8 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-
-        bias:
-          "BEARISH",
-
-        score:
-          -3
-
+        bias: "BEARISH",
+        score: -3
       };
 
     }
@@ -523,13 +470,8 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-
-        bias:
-          "BULLISH",
-
-        score:
-          2
-
+        bias: "BULLISH",
+        score: 2
       };
 
     }
@@ -537,13 +479,8 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-
-        bias:
-          "BEARISH",
-
-        score:
-          -2
-
+        bias: "BEARISH",
+        score: -2
       };
 
     }
@@ -562,13 +499,8 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-
-        bias:
-          "BULLISH",
-
-        score:
-          2
-
+        bias: "BULLISH",
+        score: 2
       };
 
     }
@@ -576,13 +508,8 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-
-        bias:
-          "BEARISH",
-
-        score:
-          -2
-
+        bias: "BEARISH",
+        score: -2
       };
 
     }
@@ -603,13 +530,8 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-
-        bias:
-          "BULLISH",
-
-        score:
-          2
-
+        bias: "BULLISH",
+        score: 2
       };
 
     }
@@ -617,13 +539,8 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-
-        bias:
-          "BEARISH",
-
-        score:
-          -2
-
+        bias: "BEARISH",
+        score: -2
       };
 
     }
@@ -671,7 +588,6 @@ function analyzeFundamentals(events) {
       calculateGoldImpact(
         event
       );
-
 
     totalScore +=
       result.score;
@@ -929,6 +845,72 @@ app.post(
 
 
 // =====================================
+// BLS TEST
+// =====================================
+
+app.get(
+  "/fundamental/bls-test",
+  async (req, res) => {
+
+    try {
+
+      const response =
+        await fetch(
+          "https://api.bls.gov/publicAPI/v2/timeseries/data/CUUR0000SA0?latest=true"
+        );
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          "BLS API HTTP xatosi: " +
+          response.status
+        );
+
+      }
+
+
+      const data =
+        await response.json();
+
+
+      res.json({
+
+        success:
+          true,
+
+        source:
+          "BLS",
+
+        data:
+          data
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "BLS API xatosi:",
+        error
+      );
+
+      res.status(500).json({
+
+        success:
+          false,
+
+        error:
+          error.message
+
+      });
+
+    }
+
+  }
+);
+
+
+// =====================================
 // MT5 CANDLE DATA
 // =====================================
 
@@ -946,6 +928,7 @@ app.post(
         timeframe,
         candles
       } = req.body;
+
 
       console.log(
         "=== MT5 CANDLE DATA ==="
@@ -966,6 +949,7 @@ app.post(
         candles?.length
       );
 
+
       if (
         !symbol ||
         !timeframe ||
@@ -984,6 +968,7 @@ app.post(
 
       }
 
+
       latestMT5Data = {
 
         symbol:
@@ -999,6 +984,7 @@ app.post(
           Date.now()
 
       };
+
 
       res.json({
 
@@ -1057,6 +1043,7 @@ app.get(
       });
 
     }
+
 
     res.json({
 
