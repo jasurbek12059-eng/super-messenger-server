@@ -29,7 +29,9 @@ admin.initializeApp({
 // =====================================
 
 app.get("/", (req, res) => {
+
   res.send("TradingAI Server ishlayapti!");
+
 });
 
 
@@ -49,6 +51,7 @@ app.post("/send-notification", async (req, res) => {
     } = req.body;
 
     console.log("=== NOTIFICATION REQUEST ===");
+
     console.log("receiverUid:", receiverUid);
     console.log("senderUid:", senderUid);
     console.log("senderName:", senderName);
@@ -78,7 +81,8 @@ app.post("/send-notification", async (req, res) => {
         )
         .once("value");
 
-    const token = snapshot.val();
+    const token =
+      snapshot.val();
 
     if (!token) {
 
@@ -409,8 +413,13 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-        bias: "BULLISH",
-        score: 3
+
+        bias:
+          "BULLISH",
+
+        score:
+          3
+
       };
 
     }
@@ -418,8 +427,13 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-        bias: "BEARISH",
-        score: -3
+
+        bias:
+          "BEARISH",
+
+        score:
+          -3
+
       };
 
     }
@@ -441,8 +455,13 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-        bias: "BULLISH",
-        score: 3
+
+        bias:
+          "BULLISH",
+
+        score:
+          3
+
       };
 
     }
@@ -450,8 +469,13 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-        bias: "BEARISH",
-        score: -3
+
+        bias:
+          "BEARISH",
+
+        score:
+          -3
+
       };
 
     }
@@ -470,8 +494,13 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-        bias: "BULLISH",
-        score: 2
+
+        bias:
+          "BULLISH",
+
+        score:
+          2
+
       };
 
     }
@@ -479,8 +508,13 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-        bias: "BEARISH",
-        score: -2
+
+        bias:
+          "BEARISH",
+
+        score:
+          -2
+
       };
 
     }
@@ -499,8 +533,13 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-        bias: "BULLISH",
-        score: 2
+
+        bias:
+          "BULLISH",
+
+        score:
+          2
+
       };
 
     }
@@ -508,8 +547,13 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-        bias: "BEARISH",
-        score: -2
+
+        bias:
+          "BEARISH",
+
+        score:
+          -2
+
       };
 
     }
@@ -530,8 +574,13 @@ function calculateGoldImpact(event) {
     if (difference > 0) {
 
       return {
-        bias: "BULLISH",
-        score: 2
+
+        bias:
+          "BULLISH",
+
+        score:
+          2
+
       };
 
     }
@@ -539,8 +588,13 @@ function calculateGoldImpact(event) {
     if (difference < 0) {
 
       return {
-        bias: "BEARISH",
-        score: -2
+
+        bias:
+          "BEARISH",
+
+        score:
+          -2
+
       };
 
     }
@@ -893,6 +947,263 @@ app.get(
         "BLS API xatosi:",
         error
       );
+
+      res.status(500).json({
+
+        success:
+          false,
+
+        error:
+          error.message
+
+      });
+
+    }
+
+  }
+);
+
+
+// =====================================
+// BLS DATA FUNCTION
+// =====================================
+
+async function getBLSData(seriesId) {
+
+  const url =
+    "https://api.bls.gov/publicAPI/v2/timeseries/data/" +
+    seriesId +
+    "?startyear=2025&endyear=2026";
+
+
+  const response =
+    await fetch(url);
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      "BLS HTTP error: " +
+      response.status
+    );
+
+  }
+
+
+  const data =
+    await response.json();
+
+
+  if (
+    data.status !==
+    "REQUEST_SUCCEEDED"
+  ) {
+
+    throw new Error(
+      "BLS request failed"
+    );
+
+  }
+
+
+  return data.Results.series[0].data;
+
+}
+
+
+// =====================================
+// CALCULATE CPI YEARLY
+// =====================================
+
+function calculateCPIYearly(data) {
+
+  if (
+    !Array.isArray(data) ||
+    data.length < 2
+  ) {
+
+    return null;
+
+  }
+
+
+  const current =
+    Number(data[0].value);
+
+  const currentYear =
+    Number(data[0].year);
+
+  const currentPeriod =
+    data[0].period;
+
+
+  const previous =
+    data.find(item =>
+      Number(item.year) ===
+        currentYear - 1 &&
+      item.period ===
+        currentPeriod
+    );
+
+
+  if (!previous) {
+
+    return null;
+
+  }
+
+
+  const previousValue =
+    Number(previous.value);
+
+
+  if (
+    !Number.isFinite(current) ||
+    !Number.isFinite(previousValue) ||
+    previousValue === 0
+  ) {
+
+    return null;
+
+  }
+
+
+  return (
+    (current - previousValue) /
+    previousValue
+  ) * 100;
+
+}
+
+
+// =====================================
+// REAL FUNDAMENTAL DATA
+// =====================================
+
+app.get(
+  "/fundamental/real",
+  async (req, res) => {
+
+    try {
+
+      console.log(
+        "=== REAL FUNDAMENTAL DATA ==="
+      );
+
+
+      // ===============================
+      // CPI
+      // ===============================
+
+      const cpiData =
+        await getBLSData(
+          "CUUR0000SA0"
+        );
+
+
+      const cpi =
+        calculateCPIYearly(
+          cpiData
+        );
+
+
+      // ===============================
+      // UNEMPLOYMENT
+      // ===============================
+
+      const unemploymentData =
+        await getBLSData(
+          "LNS14000000"
+        );
+
+
+      const latestUnemployment =
+        unemploymentData?.[0];
+
+
+      const unemployment =
+        latestUnemployment
+          ? Number(
+              latestUnemployment.value
+            )
+          : null;
+
+
+      // ===============================
+      // RESULT
+      // ===============================
+
+      const result = {
+
+        source:
+          "BLS",
+
+        CPI: {
+
+          value:
+            cpi,
+
+          index:
+            Number(
+              cpiData?.[0]?.value
+            ),
+
+          year:
+            cpiData?.[0]?.year,
+
+          period:
+            cpiData?.[0]?.periodName
+
+        },
+
+        unemployment: {
+
+          value:
+            unemployment,
+
+          year:
+            latestUnemployment?.year,
+
+          period:
+            latestUnemployment?.periodName
+
+        },
+
+        timestamp:
+          Date.now()
+
+      };
+
+
+      console.log(
+        "CPI:",
+        result.CPI.value
+      );
+
+      console.log(
+        "Unemployment:",
+        result.unemployment.value
+      );
+
+
+      res.json({
+
+        success:
+          true,
+
+        data:
+          result
+
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        "Real fundamental xatosi:",
+        error
+      );
+
 
       res.status(500).json({
 
