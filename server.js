@@ -50,6 +50,13 @@ app.post("/send-notification", async (req, res) => {
       senderUid
     } = req.body;
 
+    console.log("=== NOTIFICATION REQUEST ===");
+
+    console.log("receiverUid:", receiverUid);
+    console.log("senderUid:", senderUid);
+    console.log("senderName:", senderName);
+    console.log("message:", message);
+
     if (
       !receiverUid ||
       !message ||
@@ -171,6 +178,10 @@ app.post("/trading-signal", async (req, res) => {
       support,
       resistance
     } = req.body;
+
+    console.log(
+      "=== TRADING AI SIGNAL ==="
+    );
 
     if (
       !symbol ||
@@ -342,7 +353,7 @@ function calculateGoldImpact(event) {
     actual - forecast;
 
 
-  // CPI / PCE / INFLATION
+  // CPI / INFLATION / PCE
 
   if (
     name.includes("cpi") ||
@@ -707,19 +718,50 @@ app.post(
 
 
 // =====================================
-// BLS DATA FUNCTION
+// BLS POST DATA
 // =====================================
 
-async function getBLSData(seriesId) {
-
-  const url =
-    "https://api.bls.gov/publicAPI/v2/timeseries/data/" +
-    seriesId +
-    "?startyear=2025&endyear=2026";
-
+async function getBLSMultipleData() {
 
   const response =
-    await fetch(url);
+    await fetch(
+      "https://api.bls.gov/publicAPI/v2/timeseries/data/",
+      {
+
+        method:
+          "POST",
+
+        headers: {
+
+          "Content-Type":
+            "application/json"
+
+        },
+
+        body:
+          JSON.stringify({
+
+            seriesid: [
+
+              "CUUR0000SA0",
+
+              "LNS14000000",
+
+              "CES0000000001"
+
+            ],
+
+            startyear:
+              "2025",
+
+            endyear:
+              "2026"
+
+          })
+
+        }
+
+      );
 
 
   if (!response.ok) {
@@ -736,19 +778,51 @@ async function getBLSData(seriesId) {
     await response.json();
 
 
+  console.log(
+    "BLS status:",
+    data.status
+  );
+
+  console.log(
+    "BLS message:",
+    data.message
+  );
+
+
   if (
     data.status !==
     "REQUEST_SUCCEEDED"
   ) {
 
     throw new Error(
-      "BLS request failed"
+      "BLS request failed: " +
+      JSON.stringify(
+        data.message || []
+      )
     );
 
   }
 
 
-  return data.Results.series[0].data;
+  return data.Results.series;
+
+}
+
+
+// =====================================
+// FIND BLS SERIES
+// =====================================
+
+function findBLSSeries(
+  series,
+  seriesId
+) {
+
+  return series.find(
+    item =>
+      item.seriesID ===
+      seriesId
+  );
 
 }
 
@@ -770,10 +844,14 @@ function calculateCPIYearly(data) {
 
 
   const current =
-    Number(data[0].value);
+    Number(
+      data[0].value
+    );
 
   const currentYear =
-    Number(data[0].year);
+    Number(
+      data[0].year
+    );
 
   const currentPeriod =
     data[0].period;
@@ -796,7 +874,9 @@ function calculateCPIYearly(data) {
 
 
   const previousValue =
-    Number(previous.value);
+    Number(
+      previous.value
+    );
 
 
   if (
@@ -834,14 +914,23 @@ app.get(
       );
 
 
+      const series =
+        await getBLSMultipleData();
+
+
       // =================================
       // CPI
       // =================================
 
-      const cpiData =
-        await getBLSData(
+      const cpiSeries =
+        findBLSSeries(
+          series,
           "CUUR0000SA0"
         );
+
+
+      const cpiData =
+        cpiSeries?.data || [];
 
 
       const cpi =
@@ -854,14 +943,19 @@ app.get(
       // UNEMPLOYMENT
       // =================================
 
-      const unemploymentData =
-        await getBLSData(
+      const unemploymentSeries =
+        findBLSSeries(
+          series,
           "LNS14000000"
         );
 
 
+      const unemploymentData =
+        unemploymentSeries?.data || [];
+
+
       const latestUnemployment =
-        unemploymentData?.[0];
+        unemploymentData[0];
 
 
       const unemployment =
@@ -876,17 +970,23 @@ app.get(
       // NFP
       // =================================
 
-      const nfpData =
-        await getBLSData(
+      const nfpSeries =
+        findBLSSeries(
+          series,
           "CES0000000001"
         );
 
 
+      const nfpData =
+        nfpSeries?.data || [];
+
+
       const latestNFP =
-        nfpData?.[0];
+        nfpData[0];
+
 
       const previousNFP =
-        nfpData?.[1];
+        nfpData[1];
 
 
       const currentPayroll =
@@ -1004,8 +1104,13 @@ app.get(
       );
 
       console.log(
-        "NFP:",
+        "NFP employment:",
         result.NFP.employment
+      );
+
+      console.log(
+        "NFP previous:",
+        result.NFP.previousEmployment
       );
 
       console.log(
@@ -1136,6 +1241,11 @@ app.post(
       } = req.body;
 
 
+      console.log(
+        "=== MT5 CANDLE DATA ==="
+      );
+
+
       if (
         !symbol ||
         !timeframe ||
@@ -1184,6 +1294,7 @@ app.post(
           candles.length
 
       });
+
 
     } catch (error) {
 
