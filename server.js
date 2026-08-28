@@ -6,6 +6,11 @@ const app = express();
 
 app.use(express.json());
 
+
+// =====================================
+// FIREBASE
+// =====================================
+
 const serviceAccount = JSON.parse(
   fs.readFileSync(
     "/etc/secrets/firebase-service-account.json",
@@ -18,9 +23,21 @@ admin.initializeApp({
   databaseURL: process.env.FIREBASE_DATABASE_URL
 });
 
+
+// =====================================
+// HOME
+// =====================================
+
 app.get("/", (req, res) => {
-  res.send("Super Messenger Server ishlayapti!");
+
+  res.send("TradingAI Server ishlayapti!");
+
 });
+
+
+// =====================================
+// SUPER MESSENGER NOTIFICATION
+// =====================================
 
 app.post("/send-notification", async (req, res) => {
 
@@ -51,6 +68,7 @@ app.post("/send-notification", async (req, res) => {
         error:
           "receiverUid, message va senderUid kerak"
       });
+
     }
 
     const snapshot =
@@ -77,6 +95,7 @@ app.post("/send-notification", async (req, res) => {
         error:
           "FCM token topilmadi"
       });
+
     }
 
     console.log(
@@ -85,9 +104,11 @@ app.post("/send-notification", async (req, res) => {
     );
 
     const messageData = {
+
       token: token,
 
       data: {
+
         senderUid:
           String(senderUid),
 
@@ -99,19 +120,21 @@ app.post("/send-notification", async (req, res) => {
 
         message:
           String(message)
+
       },
 
       android: {
         priority: "high"
       }
+
     };
 
     try {
 
       const response =
-        await admin.messaging().send(
-          messageData
-        );
+        await admin
+          .messaging()
+          .send(messageData);
 
       console.log(
         "FCM muvaffaqiyatli yuborildi:",
@@ -119,8 +142,12 @@ app.post("/send-notification", async (req, res) => {
       );
 
       res.json({
+
         success: true,
-        messageId: response
+
+        messageId:
+          response
+
       });
 
     } catch (sendError) {
@@ -131,9 +158,14 @@ app.post("/send-notification", async (req, res) => {
       );
 
       res.status(500).json({
+
         success: false,
-        error: sendError.message
+
+        error:
+          sendError.message
+
       });
+
     }
 
   } catch (error) {
@@ -144,18 +176,22 @@ app.post("/send-notification", async (req, res) => {
     );
 
     res.status(500).json({
+
       success: false,
-      error: error.message
+
+      error:
+        error.message
+
     });
+
   }
+
 });
 
 
-/*
- * =====================================
- * TRADING AI SIGNAL
- * =====================================
- */
+// =====================================
+// TRADING AI SIGNAL
+// =====================================
 
 app.post("/trading-signal", async (req, res) => {
 
@@ -181,13 +217,40 @@ app.post("/trading-signal", async (req, res) => {
       "=== TRADING AI SIGNAL ==="
     );
 
-    console.log("symbol:", symbol);
-    console.log("timeframe:", timeframe);
-    console.log("signal:", signal);
-    console.log("entry:", entry);
-    console.log("stopLoss:", stopLoss);
-    console.log("takeProfit:", takeProfit);
-    console.log("strength:", strength);
+    console.log(
+      "symbol:",
+      symbol
+    );
+
+    console.log(
+      "timeframe:",
+      timeframe
+    );
+
+    console.log(
+      "signal:",
+      signal
+    );
+
+    console.log(
+      "entry:",
+      entry
+    );
+
+    console.log(
+      "stopLoss:",
+      stopLoss
+    );
+
+    console.log(
+      "takeProfit:",
+      takeProfit
+    );
+
+    console.log(
+      "strength:",
+      strength
+    );
 
     if (
       !symbol ||
@@ -197,33 +260,60 @@ app.post("/trading-signal", async (req, res) => {
     ) {
 
       return res.status(400).json({
+
         success: false,
+
         error:
           "symbol, timeframe, signal va entry kerak"
+
       });
+
     }
 
     const signalData = {
-      symbol: String(symbol),
-      timeframe: String(timeframe),
-      signal: String(signal),
 
-      entry: Number(entry),
-      stopLoss: Number(stopLoss || 0),
-      takeProfit: Number(takeProfit || 0),
+      symbol:
+        String(symbol),
 
-      strength: Number(strength || 0),
+      timeframe:
+        String(timeframe),
 
-      rsi: Number(rsi || 0),
-      ema9: Number(ema9 || 0),
-      ema21: Number(ema21 || 0),
-      atr: Number(atr || 0),
+      signal:
+        String(signal),
 
-      support: Number(support || 0),
-      resistance: Number(resistance || 0),
+      entry:
+        Number(entry),
+
+      stopLoss:
+        Number(stopLoss || 0),
+
+      takeProfit:
+        Number(takeProfit || 0),
+
+      strength:
+        Number(strength || 0),
+
+      rsi:
+        Number(rsi || 0),
+
+      ema9:
+        Number(ema9 || 0),
+
+      ema21:
+        Number(ema21 || 0),
+
+      atr:
+        Number(atr || 0),
+
+      support:
+        Number(support || 0),
+
+      resistance:
+        Number(resistance || 0),
 
       timestamp:
         admin.database.ServerValue.TIMESTAMP
+
     };
 
     const newSignal =
@@ -238,10 +328,15 @@ app.post("/trading-signal", async (req, res) => {
     );
 
     res.json({
+
       success: true,
-      signalId: newSignal.key,
+
+      signalId:
+        newSignal.key,
+
       message:
         "TradingAI signali qabul qilindi"
+
     });
 
   } catch (error) {
@@ -252,15 +347,155 @@ app.post("/trading-signal", async (req, res) => {
     );
 
     res.status(500).json({
+
       success: false,
-      error: error.message
+
+      error:
+        error.message
+
     });
+
   }
-});/*
- * =====================================
- * SERVERNI ISHGA TUSHIRISH
- * =====================================
- */
+
+});
+
+
+// =====================================
+// MT5 CANDLE DATA
+// =====================================
+
+let latestMT5Data = null;
+
+
+app.post("/mt5/candles", (req, res) => {
+
+  try {
+
+    const {
+      symbol,
+      timeframe,
+      candles
+    } = req.body;
+
+    console.log(
+      "=== MT5 CANDLE DATA ==="
+    );
+
+    console.log(
+      "symbol:",
+      symbol
+    );
+
+    console.log(
+      "timeframe:",
+      timeframe
+    );
+
+    console.log(
+      "candles:",
+      candles?.length
+    );
+
+    if (
+      !symbol ||
+      !timeframe ||
+      !Array.isArray(candles)
+    ) {
+
+      return res.status(400).json({
+
+        success: false,
+
+        error:
+          "symbol, timeframe va candles kerak"
+
+      });
+
+    }
+
+    latestMT5Data = {
+
+      symbol:
+        String(symbol),
+
+      timeframe:
+        String(timeframe),
+
+      candles:
+        candles,
+
+      timestamp:
+        Date.now()
+
+    };
+
+    res.json({
+
+      success: true,
+
+      message:
+        "MT5 ma'lumotlari qabul qilindi",
+
+      candles:
+        candles.length
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "MT5 candle xatosi:",
+      error
+    );
+
+    res.status(500).json({
+
+      success: false,
+
+      error:
+        error.message
+
+    });
+
+  }
+
+});
+
+
+// =====================================
+// GET LAST MT5 DATA
+// =====================================
+
+app.get("/mt5/latest", (req, res) => {
+
+  if (!latestMT5Data) {
+
+    return res.json({
+
+      success: false,
+
+      message:
+        "Hali MT5 ma'lumotlari kelmagan"
+
+    });
+
+  }
+
+  res.json({
+
+    success: true,
+
+    data:
+      latestMT5Data
+
+  });
+
+});
+
+
+// =====================================
+// SERVER
+// =====================================
 
 const PORT =
   process.env.PORT || 3000;
@@ -270,7 +505,7 @@ app.listen(
   () => {
 
     console.log(
-      `Server ${PORT} portda ishga tushdi`
+      `TradingAI Server ${PORT} portda ishga tushdi`
     );
 
   }
