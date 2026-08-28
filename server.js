@@ -361,6 +361,178 @@ app.post("/trading-signal", async (req, res) => {
 
 
 // =====================================
+// FUNDAMENTAL ANALYSIS
+// =====================================
+
+let latestFundamentalData = {
+
+  events: [],
+
+  goldBias:
+    "NEUTRAL",
+
+  strength:
+    0,
+
+  timestamp:
+    Date.now()
+
+};
+
+
+// =====================================
+// GET FUNDAMENTAL DATA
+// =====================================
+
+app.get("/fundamental", (req, res) => {
+
+  try {
+
+    res.json({
+
+      success:
+        true,
+
+      source:
+        "Investing.com",
+
+      data:
+        latestFundamentalData
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Fundamental GET xatosi:",
+      error
+    );
+
+    res.status(500).json({
+
+      success:
+        false,
+
+      error:
+        error.message
+
+    });
+
+  }
+
+});
+
+
+// =====================================
+// UPDATE FUNDAMENTAL DATA
+// =====================================
+
+app.post("/fundamental", (req, res) => {
+
+  try {
+
+    const {
+
+      events,
+
+      goldBias,
+
+      strength
+
+    } = req.body;
+
+
+    if (!Array.isArray(events)) {
+
+      return res.status(400).json({
+
+        success:
+          false,
+
+        error:
+          "events array kerak"
+
+      });
+
+    }
+
+
+    latestFundamentalData = {
+
+      events:
+        events,
+
+      goldBias:
+        String(
+          goldBias ||
+          "NEUTRAL"
+        ),
+
+      strength:
+        Number(
+          strength ||
+          0
+        ),
+
+      timestamp:
+        Date.now()
+
+    };
+
+
+    console.log(
+      "=== FUNDAMENTAL DATA ==="
+    );
+
+    console.log(
+      "Events:",
+      events.length
+    );
+
+    console.log(
+      "Gold Bias:",
+      goldBias
+    );
+
+    console.log(
+      "Strength:",
+      strength
+    );
+
+
+    res.json({
+
+      success:
+        true,
+
+      message:
+        "Fundamental ma'lumot saqlandi"
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Fundamental update xatosi:",
+      error
+    );
+
+    res.status(500).json({
+
+      success:
+        false,
+
+      error:
+        error.message
+
+    });
+
+  }
+
+});
+
+
+// =====================================
 // MT5 CANDLE DATA
 // =====================================
 
@@ -499,6 +671,7 @@ app.get("/mt5/latest", (req, res) => {
 
 const PORT =
   process.env.PORT || 3000;
+
 
 app.listen(
   PORT,
