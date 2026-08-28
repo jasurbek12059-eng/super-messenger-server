@@ -35,25 +35,10 @@ app.post("/send-notification", async (req, res) => {
 
     console.log("=== NOTIFICATION REQUEST ===");
 
-    console.log(
-      "receiverUid:",
-      receiverUid
-    );
-
-    console.log(
-      "senderUid:",
-      senderUid
-    );
-
-    console.log(
-      "senderName:",
-      senderName
-    );
-
-    console.log(
-      "message:",
-      message
-    );
+    console.log("receiverUid:", receiverUid);
+    console.log("senderUid:", senderUid);
+    console.log("senderName:", senderName);
+    console.log("message:", message);
 
     if (
       !receiverUid ||
@@ -99,20 +84,6 @@ app.post("/send-notification", async (req, res) => {
       token.substring(0, 10)
     );
 
-    /*
-     * DIQQAT:
-     *
-     * Bu yerda notification:
-     * { title, body }
-     * YUBORILMAYDI.
-     *
-     * Faqat DATA yuboriladi.
-     *
-     * Shunda Androiddagi
-     * MyFirebaseMessagingService
-     * notificationni o'zi yaratadi.
-     */
-
     const messageData = {
       token: token,
 
@@ -133,7 +104,9 @@ app.post("/send-notification", async (req, res) => {
       android: {
         priority: "high"
       }
-    };    try {
+    };
+
+    try {
 
       const response =
         await admin.messaging().send(
@@ -176,6 +149,118 @@ app.post("/send-notification", async (req, res) => {
     });
   }
 });
+
+
+/*
+ * =====================================
+ * TRADING AI SIGNAL
+ * =====================================
+ */
+
+app.post("/trading-signal", async (req, res) => {
+
+  try {
+
+    const {
+      symbol,
+      timeframe,
+      signal,
+      entry,
+      stopLoss,
+      takeProfit,
+      strength,
+      rsi,
+      ema9,
+      ema21,
+      atr,
+      support,
+      resistance
+    } = req.body;
+
+    console.log(
+      "=== TRADING AI SIGNAL ==="
+    );
+
+    console.log("symbol:", symbol);
+    console.log("timeframe:", timeframe);
+    console.log("signal:", signal);
+    console.log("entry:", entry);
+    console.log("stopLoss:", stopLoss);
+    console.log("takeProfit:", takeProfit);
+    console.log("strength:", strength);
+
+    if (
+      !symbol ||
+      !timeframe ||
+      !signal ||
+      entry === undefined
+    ) {
+
+      return res.status(400).json({
+        success: false,
+        error:
+          "symbol, timeframe, signal va entry kerak"
+      });
+    }
+
+    const signalData = {
+      symbol: String(symbol),
+      timeframe: String(timeframe),
+      signal: String(signal),
+
+      entry: Number(entry),
+      stopLoss: Number(stopLoss || 0),
+      takeProfit: Number(takeProfit || 0),
+
+      strength: Number(strength || 0),
+
+      rsi: Number(rsi || 0),
+      ema9: Number(ema9 || 0),
+      ema21: Number(ema21 || 0),
+      atr: Number(atr || 0),
+
+      support: Number(support || 0),
+      resistance: Number(resistance || 0),
+
+      timestamp:
+        admin.database.ServerValue.TIMESTAMP
+    };
+
+    const newSignal =
+      await admin
+        .database()
+        .ref("tradingSignals")
+        .push(signalData);
+
+    console.log(
+      "Trading signal saqlandi:",
+      newSignal.key
+    );
+
+    res.json({
+      success: true,
+      signalId: newSignal.key,
+      message:
+        "TradingAI signali qabul qilindi"
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Trading signal xatosi:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});/*
+ * =====================================
+ * SERVERNI ISHGA TUSHIRISH
+ * =====================================
+ */
 
 const PORT =
   process.env.PORT || 3000;
