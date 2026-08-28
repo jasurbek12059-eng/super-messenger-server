@@ -374,6 +374,15 @@ let latestFundamentalData = {
   strength:
     0,
 
+  bullishCount:
+    0,
+
+  bearishCount:
+    0,
+
+  score:
+    0,
+
   timestamp:
     Date.now()
 
@@ -381,155 +390,542 @@ let latestFundamentalData = {
 
 
 // =====================================
-// GET FUNDAMENTAL DATA
+// CALCULATE GOLD IMPACT
 // =====================================
 
-app.get("/fundamental", (req, res) => {
+function calculateGoldImpact(event) {
 
-  try {
+  const name =
+    String(
+      event.name || ""
+    ).toLowerCase();
 
-    res.json({
+  const actual =
+    Number(event.actual);
 
-      success:
-        true,
+  const forecast =
+    Number(event.forecast);
 
-      source:
-        "Investing.com",
 
-      data:
-        latestFundamentalData
+  if (
+    !Number.isFinite(actual) ||
+    !Number.isFinite(forecast)
+  ) {
 
-    });
+    return {
 
-  } catch (error) {
+      bias:
+        "NEUTRAL",
 
-    console.error(
-      "Fundamental GET xatosi:",
-      error
-    );
+      score:
+        0
 
-    res.status(500).json({
+    };
 
-      success:
-        false,
+  }
 
-      error:
-        error.message
+
+  const difference =
+    actual - forecast;
+
+
+  // ===================================
+  // CPI / INFLATION / PCE
+  // ===================================
+
+  if (
+    name.includes("cpi") ||
+    name.includes("inflation") ||
+    name.includes("pce")
+  ) {
+
+    if (difference < 0) {
+
+      return {
+
+        bias:
+          "BULLISH",
+
+        score:
+          3
+
+      };
+
+    }
+
+    if (difference > 0) {
+
+      return {
+
+        bias:
+          "BEARISH",
+
+        score:
+          -3
+
+      };
+
+    }
+
+  }
+
+
+  // ===================================
+  // NFP / EMPLOYMENT
+  // ===================================
+
+  if (
+    name.includes("nfp") ||
+    name.includes("nonfarm") ||
+    name.includes("non-farm") ||
+    name.includes("employment")
+  ) {
+
+    if (difference < 0) {
+
+      return {
+
+        bias:
+          "BULLISH",
+
+        score:
+          3
+
+      };
+
+    }
+
+    if (difference > 0) {
+
+      return {
+
+        bias:
+          "BEARISH",
+
+        score:
+          -3
+
+      };
+
+    }
+
+  }
+
+
+  // ===================================
+  // UNEMPLOYMENT
+  // ===================================
+
+  if (
+    name.includes("unemployment")
+  ) {
+
+    if (difference > 0) {
+
+      return {
+
+        bias:
+          "BULLISH",
+
+        score:
+          2
+
+      };
+
+    }
+
+    if (difference < 0) {
+
+      return {
+
+        bias:
+          "BEARISH",
+
+        score:
+          -2
+
+      };
+
+    }
+
+  }
+
+
+  // ===================================
+  // GDP
+  // ===================================
+
+  if (
+    name.includes("gdp")
+  ) {
+
+    if (difference < 0) {
+
+      return {
+
+        bias:
+          "BULLISH",
+
+        score:
+          2
+
+      };
+
+    }
+
+    if (difference > 0) {
+
+      return {
+
+        bias:
+          "BEARISH",
+
+        score:
+          -2
+
+      };
+
+    }
+
+  }
+
+
+  // ===================================
+  // JOBLESS CLAIMS
+  // ===================================
+
+  if (
+    name.includes("jobless") ||
+    name.includes("initial claims") ||
+    name.includes("unemployment claims")
+  ) {
+
+    if (difference > 0) {
+
+      return {
+
+        bias:
+          "BULLISH",
+
+        score:
+          2
+
+      };
+
+    }
+
+    if (difference < 0) {
+
+      return {
+
+        bias:
+          "BEARISH",
+
+        score:
+          -2
+
+      };
+
+    }
+
+  }
+
+
+  return {
+
+    bias:
+      "NEUTRAL",
+
+    score:
+      0
+
+  };
+
+}
+
+
+// =====================================
+// FUNDAMENTAL ENGINE
+// =====================================
+
+function analyzeFundamentals(events) {
+
+  let totalScore =
+    0;
+
+  let bullishCount =
+    0;
+
+  let bearishCount =
+    0;
+
+  const analyzedEvents =
+    [];
+
+
+  for (
+    const event of events
+  ) {
+
+    const result =
+      calculateGoldImpact(
+        event
+      );
+
+
+    totalScore +=
+      result.score;
+
+
+    if (
+      result.bias ===
+      "BULLISH"
+    ) {
+
+      bullishCount++;
+
+    }
+
+
+    if (
+      result.bias ===
+      "BEARISH"
+    ) {
+
+      bearishCount++;
+
+    }
+
+
+    analyzedEvents.push({
+
+      ...event,
+
+      goldBias:
+        result.bias,
+
+      goldScore:
+        result.score
 
     });
 
   }
 
-});
+
+  let goldBias =
+    "NEUTRAL";
+
+
+  if (
+    totalScore > 0
+  ) {
+
+    goldBias =
+      "BULLISH";
+
+  }
+
+
+  if (
+    totalScore < 0
+  ) {
+
+    goldBias =
+      "BEARISH";
+
+  }
+
+
+  const strength =
+    Math.min(
+      100,
+      Math.abs(
+        totalScore
+      ) * 15
+    );
+
+
+  return {
+
+    events:
+      analyzedEvents,
+
+    goldBias:
+      goldBias,
+
+    strength:
+      strength,
+
+    bullishCount:
+      bullishCount,
+
+    bearishCount:
+      bearishCount,
+
+    score:
+      totalScore,
+
+    timestamp:
+      Date.now()
+
+  };
+
+}
+
+
+// =====================================
+// GET FUNDAMENTAL DATA
+// =====================================
+
+app.get(
+  "/fundamental",
+  (req, res) => {
+
+    try {
+
+      res.json({
+
+        success:
+          true,
+
+        source:
+          "Investing.com",
+
+        data:
+          latestFundamentalData
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Fundamental GET xatosi:",
+        error
+      );
+
+      res.status(500).json({
+
+        success:
+          false,
+
+        error:
+          error.message
+
+      });
+
+    }
+
+  }
+);
 
 
 // =====================================
 // UPDATE FUNDAMENTAL DATA
 // =====================================
 
-app.post("/fundamental", (req, res) => {
+app.post(
+  "/fundamental",
+  (req, res) => {
 
-  try {
+    try {
 
-    const {
-
-      events,
-
-      goldBias,
-
-      strength
-
-    } = req.body;
+      const {
+        events
+      } = req.body;
 
 
-    if (!Array.isArray(events)) {
+      if (
+        !Array.isArray(events)
+      ) {
 
-      return res.status(400).json({
+        return res.status(400).json({
+
+          success:
+            false,
+
+          error:
+            "events array kerak"
+
+        });
+
+      }
+
+
+      latestFundamentalData =
+        analyzeFundamentals(
+          events
+        );
+
+
+      console.log(
+        "=== FUNDAMENTAL ENGINE ==="
+      );
+
+      console.log(
+        "Events:",
+        latestFundamentalData.events.length
+      );
+
+      console.log(
+        "Gold Bias:",
+        latestFundamentalData.goldBias
+      );
+
+      console.log(
+        "Strength:",
+        latestFundamentalData.strength
+      );
+
+      console.log(
+        "Bullish:",
+        latestFundamentalData.bullishCount
+      );
+
+      console.log(
+        "Bearish:",
+        latestFundamentalData.bearishCount
+      );
+
+      console.log(
+        "Score:",
+        latestFundamentalData.score
+      );
+
+
+      res.json({
+
+        success:
+          true,
+
+        message:
+          "Fundamental analysis bajarildi",
+
+        data:
+          latestFundamentalData
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Fundamental update xatosi:",
+        error
+      );
+
+      res.status(500).json({
 
         success:
           false,
 
         error:
-          "events array kerak"
+          error.message
 
       });
 
     }
 
-
-    latestFundamentalData = {
-
-      events:
-        events,
-
-      goldBias:
-        String(
-          goldBias ||
-          "NEUTRAL"
-        ),
-
-      strength:
-        Number(
-          strength ||
-          0
-        ),
-
-      timestamp:
-        Date.now()
-
-    };
-
-
-    console.log(
-      "=== FUNDAMENTAL DATA ==="
-    );
-
-    console.log(
-      "Events:",
-      events.length
-    );
-
-    console.log(
-      "Gold Bias:",
-      goldBias
-    );
-
-    console.log(
-      "Strength:",
-      strength
-    );
-
-
-    res.json({
-
-      success:
-        true,
-
-      message:
-        "Fundamental ma'lumot saqlandi"
-
-    });
-
-  } catch (error) {
-
-    console.error(
-      "Fundamental update xatosi:",
-      error
-    );
-
-    res.status(500).json({
-
-      success:
-        false,
-
-      error:
-        error.message
-
-    });
-
   }
-
-});
+);
 
 
 // =====================================
@@ -539,130 +935,141 @@ app.post("/fundamental", (req, res) => {
 let latestMT5Data = null;
 
 
-app.post("/mt5/candles", (req, res) => {
+app.post(
+  "/mt5/candles",
+  (req, res) => {
 
-  try {
+    try {
 
-    const {
-      symbol,
-      timeframe,
-      candles
-    } = req.body;
+      const {
+        symbol,
+        timeframe,
+        candles
+      } = req.body;
 
-    console.log(
-      "=== MT5 CANDLE DATA ==="
-    );
+      console.log(
+        "=== MT5 CANDLE DATA ==="
+      );
 
-    console.log(
-      "symbol:",
-      symbol
-    );
+      console.log(
+        "symbol:",
+        symbol
+      );
 
-    console.log(
-      "timeframe:",
-      timeframe
-    );
+      console.log(
+        "timeframe:",
+        timeframe
+      );
 
-    console.log(
-      "candles:",
-      candles?.length
-    );
+      console.log(
+        "candles:",
+        candles?.length
+      );
 
-    if (
-      !symbol ||
-      !timeframe ||
-      !Array.isArray(candles)
-    ) {
+      if (
+        !symbol ||
+        !timeframe ||
+        !Array.isArray(candles)
+      ) {
 
-      return res.status(400).json({
+        return res.status(400).json({
 
-        success: false,
+          success:
+            false,
+
+          error:
+            "symbol, timeframe va candles kerak"
+
+        });
+
+      }
+
+      latestMT5Data = {
+
+        symbol:
+          String(symbol),
+
+        timeframe:
+          String(timeframe),
+
+        candles:
+          candles,
+
+        timestamp:
+          Date.now()
+
+      };
+
+      res.json({
+
+        success:
+          true,
+
+        message:
+          "MT5 ma'lumotlari qabul qilindi",
+
+        candles:
+          candles.length
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "MT5 candle xatosi:",
+        error
+      );
+
+      res.status(500).json({
+
+        success:
+          false,
 
         error:
-          "symbol, timeframe va candles kerak"
+          error.message
 
       });
 
     }
 
-    latestMT5Data = {
-
-      symbol:
-        String(symbol),
-
-      timeframe:
-        String(timeframe),
-
-      candles:
-        candles,
-
-      timestamp:
-        Date.now()
-
-    };
-
-    res.json({
-
-      success: true,
-
-      message:
-        "MT5 ma'lumotlari qabul qilindi",
-
-      candles:
-        candles.length
-
-    });
-
-  } catch (error) {
-
-    console.error(
-      "MT5 candle xatosi:",
-      error
-    );
-
-    res.status(500).json({
-
-      success: false,
-
-      error:
-        error.message
-
-    });
-
   }
-
-});
+);
 
 
 // =====================================
 // GET LAST MT5 DATA
 // =====================================
 
-app.get("/mt5/latest", (req, res) => {
+app.get(
+  "/mt5/latest",
+  (req, res) => {
 
-  if (!latestMT5Data) {
+    if (!latestMT5Data) {
 
-    return res.json({
+      return res.json({
 
-      success: false,
+        success:
+          false,
 
-      message:
-        "Hali MT5 ma'lumotlari kelmagan"
+        message:
+          "Hali MT5 ma'lumotlari kelmagan"
+
+      });
+
+    }
+
+    res.json({
+
+      success:
+        true,
+
+      data:
+        latestMT5Data
 
     });
 
   }
-
-  res.json({
-
-    success: true,
-
-    data:
-      latestMT5Data
-
-  });
-
-});
+);
 
 
 // =====================================
