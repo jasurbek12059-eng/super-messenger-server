@@ -712,7 +712,10 @@ app.post(
     }
 
   }
-);// =====================================
+);
+
+
+// =====================================
 // BLS MULTIPLE DATA
 // =====================================
 
@@ -887,20 +890,14 @@ app.get(
         await getBLSMultipleData();
 
 
-      // ================================
-      // CPI
-      // ================================
-
       const cpiSeries =
         findBLSSeries(
           series,
           "CUUR0000SA0"
         );
 
-
       const cpiData =
         cpiSeries?.data || [];
-
 
       const cpi =
         calculateCPIYearly(
@@ -908,24 +905,17 @@ app.get(
         );
 
 
-      // ================================
-      // UNEMPLOYMENT
-      // ================================
-
       const unemploymentSeries =
         findBLSSeries(
           series,
           "LNS14000000"
         );
 
-
       const unemploymentData =
         unemploymentSeries?.data || [];
 
-
       const latestUnemployment =
         unemploymentData[0];
-
 
       const unemployment =
         latestUnemployment
@@ -935,28 +925,20 @@ app.get(
           : null;
 
 
-      // ================================
-      // NFP
-      // ================================
-
       const nfpSeries =
         findBLSSeries(
           series,
           "CES0000000001"
         );
 
-
       const nfpData =
         nfpSeries?.data || [];
-
 
       const latestNFP =
         nfpData[0];
 
-
       const previousNFP =
         nfpData[1];
-
 
       const currentPayroll =
         latestNFP
@@ -965,7 +947,6 @@ app.get(
             )
           : null;
 
-
       const previousPayroll =
         previousNFP
           ? Number(
@@ -973,18 +954,12 @@ app.get(
             )
           : null;
 
-
       let nfpChange =
         null;
 
-
       if (
-        Number.isFinite(
-          currentPayroll
-        ) &&
-        Number.isFinite(
-          previousPayroll
-        )
+        Number.isFinite(currentPayroll) &&
+        Number.isFinite(previousPayroll)
       ) {
 
         nfpChange =
@@ -994,15 +969,10 @@ app.get(
       }
 
 
-      // ================================
-      // RESULT
-      // ================================
-
       const result = {
 
         source:
           "BLS",
-
 
         CPI: {
 
@@ -1022,7 +992,6 @@ app.get(
 
         },
 
-
         unemployment: {
 
           value:
@@ -1035,7 +1004,6 @@ app.get(
             latestUnemployment?.periodName
 
         },
-
 
         NFP: {
 
@@ -1056,7 +1024,6 @@ app.get(
 
         },
 
-
         timestamp:
           Date.now()
 
@@ -1068,18 +1035,15 @@ app.get(
         result.CPI.value
       );
 
-
       console.log(
         "Unemployment:",
         result.unemployment.value
       );
 
-
       console.log(
         "NFP:",
         result.NFP.employment
       );
-
 
       console.log(
         "NFP change:",
@@ -1105,7 +1069,6 @@ app.get(
         error
       );
 
-
       res.status(500).json({
 
         success:
@@ -1119,10 +1082,7 @@ app.get(
     }
 
   }
-);
-
-
-// =====================================
+);// =====================================
 // FINAL TRADING AI
 // TECHNICAL + FUNDAMENTAL
 // =====================================
@@ -1134,35 +1094,25 @@ app.post(
     try {
 
       const {
-
         technicalSignal,
-
         technicalStrength,
-
         fundamentalBias,
-
         fundamentalStrength,
-
         entry,
-
         support,
-
         resistance
-
       } = req.body;
 
 
       const tech =
         String(
-          technicalSignal ||
-          "WAIT"
+          technicalSignal || "WAIT"
         ).toUpperCase();
 
 
       const fund =
         String(
-          fundamentalBias ||
-          "NEUTRAL"
+          fundamentalBias || "NEUTRAL"
         ).toUpperCase();
 
 
@@ -1178,56 +1128,36 @@ app.post(
         );
 
 
-      // ================================
-      // SCORE
-      // ================================
-
       let score = 0;
 
 
-      if (
-        tech === "BUY"
-      ) {
+      if (tech === "BUY") {
 
-        score +=
-          techStrength;
+        score += techStrength;
 
       }
 
 
-      if (
-        tech === "SELL"
-      ) {
+      if (tech === "SELL") {
 
-        score -=
-          techStrength;
+        score -= techStrength;
 
       }
 
 
-      if (
-        fund === "BULLISH"
-      ) {
+      if (fund === "BULLISH") {
 
-        score +=
-          fundStrength;
+        score += fundStrength;
 
       }
 
 
-      if (
-        fund === "BEARISH"
-      ) {
+      if (fund === "BEARISH") {
 
-        score -=
-          fundStrength;
+        score -= fundStrength;
 
       }
 
-
-      // ================================
-      // STRENGTH
-      // ================================
 
       const totalStrength =
         Math.round(
@@ -1238,17 +1168,11 @@ app.post(
         );
 
 
-      // ================================
-      // FINAL SIGNAL
-      // ================================
-
       let finalSignal =
         "WAIT";
 
 
-      if (
-        score >= 30
-      ) {
+      if (score >= 30) {
 
         finalSignal =
           "BUY";
@@ -1256,9 +1180,7 @@ app.post(
       }
 
 
-      if (
-        score <= -30
-      ) {
+      if (score <= -30) {
 
         finalSignal =
           "SELL";
@@ -1266,9 +1188,7 @@ app.post(
       }
 
 
-      // ================================
       // CONFLICT PROTECTION
-      // ================================
 
       if (
         tech === "BUY" &&
@@ -1292,10 +1212,6 @@ app.post(
       }
 
 
-      // ================================
-      // RESULT
-      // ================================
-
       const result = {
 
         signal:
@@ -1303,7 +1219,6 @@ app.post(
 
         strength:
           totalStrength,
-
 
         technical: {
 
@@ -1315,7 +1230,6 @@ app.post(
 
         },
 
-
         fundamental: {
 
           bias:
@@ -1326,24 +1240,20 @@ app.post(
 
         },
 
-
         entry:
           Number(
             entry || 0
           ),
-
 
         support:
           Number(
             support || 0
           ),
 
-
         resistance:
           Number(
             resistance || 0
           ),
-
 
         timestamp:
           Date.now()
@@ -1401,10 +1311,581 @@ app.post(
 
 
 // =====================================
+// REAL FINAL TRADING AI
+// TECHNICAL + REAL BLS
+// =====================================
+
+app.post(
+  "/trading-ai/real-final",
+  async (req, res) => {
+
+    try {
+
+      const {
+
+        technicalSignal,
+
+        technicalStrength,
+
+        entry,
+
+        support,
+
+        resistance,
+
+        rsi,
+
+        ema9,
+
+        ema21,
+
+        macd,
+
+        atr
+
+      } = req.body;
+
+
+      const tech =
+        String(
+          technicalSignal || "WAIT"
+        ).toUpperCase();
+
+
+      const techStrength =
+        Number(
+          technicalStrength || 0
+        );
+
+
+      // =================================
+      // GET REAL BLS
+      // =================================
+
+      const series =
+        await getBLSMultipleData();
+
+
+      // =================================
+      // CPI
+      // =================================
+
+      const cpiSeries =
+        findBLSSeries(
+          series,
+          "CUUR0000SA0"
+        );
+
+      const cpiData =
+        cpiSeries?.data || [];
+
+      const cpi =
+        calculateCPIYearly(
+          cpiData
+        );
+
+
+      // =================================
+      // UNEMPLOYMENT
+      // =================================
+
+      const unemploymentSeries =
+        findBLSSeries(
+          series,
+          "LNS14000000"
+        );
+
+      const unemploymentData =
+        unemploymentSeries?.data || [];
+
+      const latestUnemployment =
+        unemploymentData[0];
+
+      const unemployment =
+        latestUnemployment
+          ? Number(
+              latestUnemployment.value
+            )
+          : null;
+
+
+      // =================================
+      // NFP
+      // =================================
+
+      const nfpSeries =
+        findBLSSeries(
+          series,
+          "CES0000000001"
+        );
+
+      const nfpData =
+        nfpSeries?.data || [];
+
+      const latestNFP =
+        nfpData[0];
+
+      const previousNFP =
+        nfpData[1];
+
+      const currentPayroll =
+        latestNFP
+          ? Number(
+              latestNFP.value
+            )
+          : null;
+
+      const previousPayroll =
+        previousNFP
+          ? Number(
+              previousNFP.value
+            )
+          : null;
+
+
+      const nfpChange =
+        Number.isFinite(currentPayroll) &&
+        Number.isFinite(previousPayroll)
+          ? currentPayroll -
+            previousPayroll
+          : null;
+
+
+      // =================================
+      // FUNDAMENTAL SCORE
+      // =================================
+
+      let fundamentalScore =
+        0;
+
+
+      // CPI
+
+      if (
+        Number.isFinite(cpi)
+      ) {
+
+        if (
+          cpi < 2.5
+        ) {
+
+          fundamentalScore += 1;
+
+        }
+
+        else if (
+          cpi > 3.5
+        ) {
+
+          fundamentalScore -= 1;
+
+        }
+
+      }
+
+
+      // UNEMPLOYMENT
+
+      if (
+        Number.isFinite(
+          unemployment
+        )
+      ) {
+
+        if (
+          unemployment >= 4.5
+        ) {
+
+          fundamentalScore += 1;
+
+        }
+
+        else if (
+          unemployment <= 3.8
+        ) {
+
+          fundamentalScore -= 1;
+
+        }
+
+      }
+
+
+      // NFP
+
+      if (
+        Number.isFinite(
+          nfpChange
+        )
+      ) {
+
+        if (
+          nfpChange < 0
+        ) {
+
+          fundamentalScore += 1;
+
+        }
+
+        else if (
+          nfpChange > 0
+        ) {
+
+          fundamentalScore -= 1;
+
+        }
+
+      }
+
+
+      // =================================
+      // FUNDAMENTAL BIAS
+      // =================================
+
+      let fundamentalBias =
+        "NEUTRAL";
+
+
+      if (
+        fundamentalScore > 0
+      ) {
+
+        fundamentalBias =
+          "BULLISH";
+
+      }
+
+
+      if (
+        fundamentalScore < 0
+      ) {
+
+        fundamentalBias =
+          "BEARISH";
+
+      }
+
+
+      const fundamentalStrength =
+        Math.min(
+          100,
+          Math.abs(
+            fundamentalScore
+          ) * 30
+        );
+
+
+      // =================================
+      // FINAL SCORE
+      // =================================
+
+      let finalScore =
+        0;
+
+
+      if (
+        tech === "BUY"
+      ) {
+
+        finalScore +=
+          techStrength;
+
+      }
+
+
+      if (
+        tech === "SELL"
+      ) {
+
+        finalScore -=
+          techStrength;
+
+      }
+
+
+      if (
+        fundamentalBias ===
+        "BULLISH"
+      ) {
+
+        finalScore +=
+          fundamentalStrength;
+
+      }
+
+
+      if (
+        fundamentalBias ===
+        "BEARISH"
+      ) {
+
+        finalScore -=
+          fundamentalStrength;
+
+      }
+
+
+      // =================================
+      // FINAL SIGNAL
+      // =================================
+
+      let finalSignal =
+        "WAIT";
+
+
+      if (
+        finalScore >= 30
+      ) {
+
+        finalSignal =
+          "BUY";
+
+      }
+
+
+      if (
+        finalScore <= -30
+      ) {
+
+        finalSignal =
+          "SELL";
+
+      }
+
+
+      // =================================
+      // CONFLICT PROTECTION
+      // =================================
+
+      if (
+        tech === "BUY" &&
+        fundamentalBias ===
+        "BEARISH"
+      ) {
+
+        finalSignal =
+          "WAIT";
+
+      }
+
+
+      if (
+        tech === "SELL" &&
+        fundamentalBias ===
+        "BULLISH"
+      ) {
+
+        finalSignal =
+          "WAIT";
+
+      }
+
+
+      // =================================
+      // CONFIDENCE
+      // =================================
+
+      const confidence =
+        Math.round(
+          Math.min(
+            100,
+            Math.abs(
+              finalScore
+            )
+          )
+        );
+
+
+      // =================================
+      // RESULT
+      // =================================
+
+      const result = {
+
+        signal:
+          finalSignal,
+
+        confidence:
+          confidence,
+
+        score:
+          finalScore,
+
+
+        technical: {
+
+          signal:
+            tech,
+
+          strength:
+            techStrength,
+
+          rsi:
+            Number(
+              rsi || 0
+            ),
+
+          ema9:
+            Number(
+              ema9 || 0
+            ),
+
+          ema21:
+            Number(
+              ema21 || 0
+            ),
+
+          macd:
+            Number(
+              macd || 0
+            ),
+
+          atr:
+            Number(
+              atr || 0
+            )
+
+        },
+
+
+        fundamental: {
+
+          bias:
+            fundamentalBias,
+
+          strength:
+            fundamentalStrength,
+
+          score:
+            fundamentalScore,
+
+
+          CPI: {
+
+            value:
+              cpi,
+
+            year:
+              cpiData?.[0]?.year,
+
+            period:
+              cpiData?.[0]?.periodName
+
+          },
+
+
+          unemployment: {
+
+            value:
+              unemployment,
+
+            year:
+              latestUnemployment?.year,
+
+            period:
+              latestUnemployment?.periodName
+
+          },
+
+
+          NFP: {
+
+            employment:
+              currentPayroll,
+
+            previousEmployment:
+              previousPayroll,
+
+            change:
+              nfpChange,
+
+            year:
+              latestNFP?.year,
+
+            period:
+              latestNFP?.periodName
+
+          }
+
+        },
+
+
+        entry:
+          Number(
+            entry || 0
+          ),
+
+        support:
+          Number(
+            support || 0
+          ),
+
+        resistance:
+          Number(
+            resistance || 0
+          ),
+
+        timestamp:
+          Date.now()
+
+      };
+
+
+      console.log(
+        "=== REAL FINAL TRADING AI ==="
+      );
+
+
+      console.log(
+        JSON.stringify(
+          result,
+          null,
+          2
+        )
+      );
+
+
+      res.json({
+
+        success:
+          true,
+
+        data:
+          result
+
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        "Real Final TradingAI xatosi:",
+        error
+      );
+
+
+      res.status(500).json({
+
+        success:
+          false,
+
+        error:
+          error.message
+
+      });
+
+    }
+
+  }
+);
+
+
+// =====================================
 // MT5 CANDLES
 // =====================================
 
-let latestMT5Data = null;
+let latestMT5Data =
+  null;
 
 
 app.post(
@@ -1423,7 +1904,9 @@ app.post(
       if (
         !symbol ||
         !timeframe ||
-        !Array.isArray(candles)
+        !Array.isArray(
+          candles
+        )
       ) {
 
         return res.status(400).json({
